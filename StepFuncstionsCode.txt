@@ -1,0 +1,48 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "ProcessaCSV",
+  "States": {
+    "ProcessaCSV": {
+      "Type": "Map",
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "DISTRIBUTED",
+          "ExecutionType": "EXPRESS"
+        },
+        "StartAt": "SQS SendMessage",
+        "States": {
+          "SQS SendMessage": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::sqs:sendMessage",
+            "Parameters": {
+              "MessageBody.$": "$",
+              "QueueUrl": "https://sqs.us-east-1.amazonaws.com/9999999999/filateste"
+            },
+            "End": true
+          }
+        }
+      },
+      "ItemReader": {
+        "Resource": "arn:aws:states:::s3:getObject",
+        "ReaderConfig": {
+          "InputType": "CSV",
+          "CSVHeaderLocation": "FIRST_ROW"
+        },
+        "Parameters": {
+          "Bucket.$": "$.bucketName",
+          "Key.$": "$.objectKey"
+        }
+      },
+      "MaxConcurrency": 1000,
+      "End": true,
+      "ResultWriter": {
+        "Resource": "arn:aws:states:::s3:putObject",
+        "Parameters": {
+          "Bucket": "edersontests",
+          "Prefix": "result/"
+        }
+      },
+      "Label": "ProcessaCSV"
+    }
+  }
+}

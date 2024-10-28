@@ -1,0 +1,40 @@
+import json
+import boto3
+
+
+# Cliente para Step Functions
+stepfunctions_client = boto3.client('stepfunctions')
+
+def lambda_handler(event, context):
+
+     # Extrai informações do evento S3
+    bucket = event['Records'][0]['s3']['bucket']['name']
+    key = event['Records'][0]['s3']['object']['key']
+    
+    # Defina o ARN da máquina de estados do Step Functions
+    state_machine_arn = "arn:aws:states:us-east-1:99999999:stateMachine:IMPORTANTO_ARQUIVO_CSV"
+
+    # Parâmetros de entrada para o Step Functions
+    input_params = {
+        "bucketName": bucket,
+        "objectKey": key
+    }
+
+    # Converte o dicionário de parâmetros para JSON
+    input_json = json.dumps(input_params)
+
+    try:
+        # Inicia a execução do Step Functions
+        response = stepfunctions_client.start_execution(
+            stateMachineArn=state_machine_arn,
+            input=input_json
+        )
+        execution_arn = response['executionArn']
+        print(f"Step Function iniciado com sucesso. Execution ARN: {execution_arn}")
+    except Exception as e:
+        print(f"Erro ao iniciar Step Function: {str(e)}")
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Step Function iniciado com sucesso!')
+    }
